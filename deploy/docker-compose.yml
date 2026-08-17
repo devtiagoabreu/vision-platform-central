@@ -1,0 +1,28 @@
+version: "3.8"
+
+services:
+  vision-platform-central:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    restart: always
+    env_file: ../.env
+    ports:
+      - "8081:8081"
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: vision_central
+      POSTGRES_USER: vision
+      POSTGRES_PASSWORD: change-me
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+
+volumes:
+  pgdata:

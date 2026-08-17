@@ -1,0 +1,20 @@
+[Unit]
+Description=Vision Platform Central - Collector Service
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+user=vision
+group=vision
+WorkingDirectory=/opt/vision-platform-central
+EnvironmentFile=/opt/vision-platform-central/.env
+ExecStart=/opt/vision-platform-central/venv/bin/uvicorn src.main:app --host 0.0.0.0 --port 8081
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=vision-platform-central
+
+[Install]
+WantedBy=multi-user.target
