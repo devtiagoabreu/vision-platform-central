@@ -1,22 +1,8 @@
 from unittest.mock import MagicMock
 
-import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
 from src.collector.sync import collect_from_local
-from src.storage.database import Base, ObservationRecord
-
-TEST_DB_URL = "sqlite:///test_sync.db"
-test_engine = create_engine(TEST_DB_URL, connect_args={"check_same_thread": False})
-TestSession = sessionmaker(bind=test_engine)
-
-
-@pytest.fixture(autouse=True)
-def setup_db():
-    Base.metadata.create_all(bind=test_engine)
-    yield
-    Base.metadata.drop_all(bind=test_engine)
+from src.storage.database import ObservationRecord
+from tests.conftest import TestSession
 
 
 def _make_obs(obs_id="obs_001"):

@@ -1,43 +1,9 @@
 from unittest.mock import patch
 
-import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
-from src.main import app
-from src.storage.database import Base, LocalRecord, ObservationRecord, get_db
-
-TEST_DB_URL = "sqlite:///test_central.db"
-test_engine = create_engine(TEST_DB_URL, connect_args={"check_same_thread": False})
-TestSession = sessionmaker(bind=test_engine)
-
-
-def override_get_db():
-    db = TestSession()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-app.dependency_overrides[get_db] = override_get_db
-
-
-@pytest.fixture(autouse=True)
-def setup_db():
-    Base.metadata.create_all(bind=test_engine)
-    yield
-    Base.metadata.drop_all(bind=test_engine)
-
-
-@pytest.fixture(autouse=True)
-def patch_sessions():
-    with patch("src.main.SessionLocal", TestSession):
-        yield
-
-
-client = TestClient(app)
+from src.storage.database import LocalRecord, ObservationRecord
+from tests.conftest import TestSession
 
 
 def _seed_observation(obs_id="obs_test_001", status="received", local_id="LOCAL-001"):
@@ -74,7 +40,7 @@ def _seed_local(local_id="LOCAL-001", name="Test Local"):
 
 
 class TestHealthEndpoint:
-    def test_health_ok(self):
+    def test_health_ok(self, client: TestClient):
         response = client.get("/health")
         assert response.status_code == 200
         data = response.json()
@@ -82,26 +48,26 @@ class TestHealthEndpoint:
         assert data["service"] == "vision-platform-central"
         assert data["version"] == "0.1.0"
 
-    def test_health_has_storage(self):
+    def test_health_has_storage(self, client: TestClient):
         response = client.get("/health")
         storage = response.json()["storage"]
         assert "free_bytes" in storage
         assert "total_bytes" in storage
         assert "queue_pending" in storage
 
-    def test_health_counts_observations(self):
-        _seed_received = _seed_observation("obs_pending", "received")
+    def test_health_counts_observations(self, client: TestClient):
+        _seed_observation("obs_pending", "received")
         response = client.get("/health")
         assert response.json()["storage"]["queue_pending"] == 1
 
-    def test_health_counts_locals(self):
+    def test_health_counts_locals(self, client: TestClient):
         _seed_local()
         response = client.get("/health")
         assert response.json()["locals_count"] == 1
 
 
 class TestStatusEndpoint:
-    def test_status(self):
+    def test_status(self, client: TestClient):
         response = client.get("/api/v1/status")
         assert response.status_code == 200
         data = response.json()
@@ -110,19 +76,19 @@ class TestStatusEndpoint:
 
 
 class TestLocalsEndpoint:
-    def test_list_locals_empty(self):
+    def test_list_locals_empty(self, client: TestClient):
         response = client.get("/api/v1/locals")
         assert response.status_code == 200
         assert response.json()["locals"] == []
 
-    def test_list_locals(self):
+    def test_list_locals(self, client: TestClient):
         _seed_local()
         response = client.get("/api/v1/locals")
         data = response.json()
         assert len(data["locals"]) == 1
         assert data["locals"][0]["local_id"] == "LOCAL-001"
 
-    def test_register_local(self):
+    def test_register_local(self, client: TestClient):
         response = client.post(
             "/api/v1/locals?local_id=L2&local_name=Local2&api_url=http://x&api_token=t",
             headers={"X-Api-Token": "change-me"},
@@ -130,11 +96,11 @@ class TestLocalsEndpoint:
         assert response.status_code == 200
         assert response.json()["status"] == "registered"
 
-    def test_register_local_unauthorized(self):
+    def test_register_local_unauthorized(self, client: TestClient):
         response = client.post("/api/v1/locals?local_id=L2&local_name=L2&api_url=http://x&api_token=t")
         assert response.status_code == 422
 
-    def test_register_local_update_existing(self):
+    def test_register_local_update_existing(self, client: TestClient):
         _seed_local()
         response = client.post(
             "/api/v1/locals?local_id=LOCAL-001&local_name=Updated&api_url=http://new&api_token=new",
@@ -150,19 +116,19 @@ class TestLocalsEndpoint:
 
 
 class TestObservationsEndpoint:
-    def test_list_empty(self):
+    def test_list_empty(self, client: TestClient):
         response = client.get("/api/v1/observations")
         assert response.status_code == 200
         assert response.json()["observations"] == []
 
-    def test_list_with_data(self):
+    def test_list_with_data(self, client: TestClient):
         _seed_observation("obs1")
         _seed_observation("obs2", status="acknowledged")
 
         response = client.get("/api/v1/observations")
         assert len(response.json()["observations"]) == 2
 
-    def test_filter_by_status(self):
+    def test_filter_by_status(self, client: TestClient):
         _seed_observation("obs1", "received")
         _seed_observation("obs2", "acknowledged")
 
@@ -171,7 +137,7 @@ class TestObservationsEndpoint:
         assert len(data["observations"]) == 1
         assert data["observations"][0]["status"] == "received"
 
-    def test_filter_by_local_id(self):
+    def test_filter_by_local_id(self, client: TestClient):
         _seed_observation("obs1", local_id="LOCAL-A")
         _seed_observation("obs2", local_id="LOCAL-B")
 
@@ -180,7 +146,7 @@ class TestObservationsEndpoint:
         assert len(data["observations"]) == 1
         assert data["observations"][0]["local_id"] == "LOCAL-A"
 
-    def test_limit(self):
+    def test_limit(self, client: TestClient):
         for i in range(5):
             _seed_observation(f"obs{i}")
 
@@ -189,7 +155,7 @@ class TestObservationsEndpoint:
 
 
 class TestReceiveObservation:
-    def test_receive_success(self):
+    def test_receive_success(self, client: TestClient):
         payload = {
             "observation_id": "obs_new_001",
             "camera_id": "CAM-001",
@@ -211,17 +177,17 @@ class TestReceiveObservation:
         assert data["observation_id"] == "obs_new_001"
         assert data["status"] == "received"
 
-    def test_receive_duplicate(self):
+    def test_receive_duplicate(self, client: TestClient):
         payload = {"observation_id": "obs_dup", "local_id": "LOCAL-001", "camera_id": "CAM-001", "captured_at": "x"}
         client.post("/api/v1/observations", json=payload, headers={"X-Api-Token": "change-me"})
         response = client.post("/api/v1/observations", json=payload, headers={"X-Api-Token": "change-me"})
         assert response.json()["status"] == "already_received"
 
-    def test_receive_unauthorized(self):
+    def test_receive_unauthorized(self, client: TestClient):
         response = client.post("/api/v1/observations", json={"observation_id": "test"})
         assert response.status_code == 422
 
-    def test_receive_missing_id(self):
+    def test_receive_missing_id(self, client: TestClient):
         response = client.post(
             "/api/v1/observations",
             json={"local_id": "LOCAL-001"},
@@ -229,7 +195,7 @@ class TestReceiveObservation:
         )
         assert response.status_code == 400
 
-    def test_receive_stores_correctly(self):
+    def test_receive_stores_correctly(self, client: TestClient):
         payload = {
             "observation_id": "obs_stored",
             "local_id": "LOCAL-001",
@@ -255,7 +221,7 @@ class TestReceiveObservation:
 
 class TestPollEndpoint:
     @patch("src.api.routes.collect_from_local")
-    def test_poll_trigger(self, mock_collect):
+    def test_poll_trigger(self, mock_collect, client: TestClient):
         mock_collect.return_value = {
             "status": "ok",
             "observations_collected": 1,
@@ -271,6 +237,6 @@ class TestPollEndpoint:
         assert data["observations_collected"] == 1
         mock_collect.assert_called_once()
 
-    def test_poll_unauthorized(self):
+    def test_poll_unauthorized(self, client: TestClient):
         response = client.post("/api/v1/collector/poll")
         assert response.status_code == 422
