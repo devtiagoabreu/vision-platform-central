@@ -178,3 +178,28 @@ async def poll_local(token: str = Depends(verify_token), db: Session = Depends(g
     client = LocalClient()
     result = collect_from_local(client=client, db=db)
     return result
+
+
+@router.get("/api/v1/cameras")
+async def list_cameras(db: Session = Depends(get_db)):
+    rows = (
+        db.query(
+            ObservationRecord.camera_id,
+            ObservationRecord.local_id,
+        )
+        .distinct()
+        .all()
+    )
+
+    cameras = []
+    for camera_id, local_id in rows:
+        count = db.query(ObservationRecord).filter(
+            ObservationRecord.camera_id == camera_id
+        ).count()
+        cameras.append({
+            "camera_id": camera_id,
+            "local_id": local_id,
+            "observation_count": count,
+        })
+
+    return {"cameras": cameras}
