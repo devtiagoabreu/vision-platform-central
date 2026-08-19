@@ -1,0 +1,66 @@
+{% extends "base_central.html" %}
+{% block title %}Observação {{ obs.observation_id[:12] }}{% endblock %}
+{% block content %}
+<div class="max-w-4xl">
+    <div class="flex items-center gap-2 mb-6">
+        <a href="/dashboard/observations" class="text-gray-400 hover:text-white">&larr; Voltar</a>
+        <h2 class="text-2xl font-bold">Detalhe da Observação</h2>
+    </div>
+
+    <div class="bg-gray-800 p-6 rounded-lg">
+        <div class="grid grid-cols-2 gap-4 text-sm">
+            <div>
+                <span class="text-gray-400">Observation ID:</span>
+                <p class="text-white font-mono">{{ obs.observation_id }}</p>
+            </div>
+            <div>
+                <span class="text-gray-400">Local:</span>
+                <p class="text-white">{{ obs.local_id }}</p>
+            </div>
+            <div>
+                <span class="text-gray-400">Câmera:</span>
+                <p class="text-white">{{ obs.camera_id }}</p>
+            </div>
+            <div>
+                <span class="text-gray-400">Capturado em:</span>
+                <p class="text-white">{{ obs.captured_at }}</p>
+            </div>
+            <div>
+                <span class="text-gray-400">SHA256:</span>
+                <p class="text-white font-mono text-xs">{{ obs.sha256[:32] if obs.sha256 else 'N/A' }}...</p>
+            </div>
+            <div>
+                <span class="text-gray-400">Dimensões:</span>
+                <p class="text-white">{{ obs.width or '?' }} x {{ obs.height or '?' }}</p>
+            </div>
+            <div>
+                <span class="text-gray-400">Quality Score:</span>
+                <p class="text-white">{{ '%.2f'|format(obs.quality_score) if obs.quality_score else 'N/A' }}</p>
+            </div>
+            <div>
+                <span class="text-gray-400">Algoritmo:</span>
+                <p class="text-white">{{ obs.algorithm_version or 'N/A' }}</p>
+            </div>
+            <div>
+                <span class="text-gray-400">Status:</span>
+                <span class="px-2 py-0.5 rounded text-xs
+                    {% if obs.status == 'received' %}bg-yellow-900 text-yellow-300
+                    {% elif obs.status == 'processed' %}bg-green-900 text-green-300
+                    {% else %}bg-gray-600 text-gray-300{% endif %}">
+                    {{ obs.status }}
+                </span>
+            </div>
+            <div>
+                <span class="text-gray-400">Recebido em:</span>
+                <p class="text-white">{{ obs.created_at.strftime('%d/%m/%Y %H:%M:%S') if obs.created_at else 'N/A' }}</p>
+            </div>
+            {% if obs.processed_at %}
+            <div>
+                <span class="text-gray-400">Processado em:</span>
+                <p class="text-white">{{ obs.processed_at.strftime('%d/%m/%Y %H:%M:%S') }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

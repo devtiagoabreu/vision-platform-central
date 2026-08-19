@@ -41,7 +41,16 @@ def _override_get_db():
 @pytest.fixture(autouse=True)
 def _patch_sessions():
     with patch("src.main.SessionLocal", TestSession), \
-         patch("src.main.create_tables"):
+         patch("src.main.create_tables"), \
+         patch("src.auth.router.SessionLocal", TestSession), \
+         patch("src.auth.dependencies.SessionLocal", TestSession), \
+         patch("src.auth.router.settings") as mock_auth_settings, \
+         patch("src.auth.dependencies.settings") as mock_dep_settings:
+        for s in (mock_auth_settings, mock_dep_settings):
+            s.jwt_secret_key = "test-secret-key"
+            s.jwt_expire_hours = 24
+            s.admin_username = "admin"
+            s.admin_password = "admin"
         yield
 
 

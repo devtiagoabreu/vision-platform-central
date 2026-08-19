@@ -1,0 +1,51 @@
+{% extends "base_central.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<div class="max-w-6xl">
+    <h2 class="text-2xl font-bold mb-6">Dashboard</h2>
+
+    <!-- Status cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-gray-800 p-4 rounded-lg">
+            <p class="text-gray-400 text-sm">CPU</p>
+            <p class="text-2xl font-bold {% if cpu_percent > 80 %}text-red-400{% elif cpu_percent > 50 %}text-yellow-400{% else %}text-green-400{% endif %}">{{ cpu_percent }}%</p>
+        </div>
+        <div class="bg-gray-800 p-4 rounded-lg">
+            <p class="text-gray-400 text-sm">Memória</p>
+            <p class="text-2xl font-bold {% if memory_percent > 80 %}text-red-400{% elif memory_percent > 50 %}text-yellow-400{% else %}text-green-400{% endif %}">{{ memory_percent }}%</p>
+        </div>
+        <div class="bg-gray-800 p-4 rounded-lg">
+            <p class="text-gray-400 text-sm">Locais Ativos</p>
+            <p class="text-2xl font-bold text-blue-400">{{ locals_active }}</p>
+            <p class="text-xs text-gray-500">de {{ locals_total }}</p>
+        </div>
+        <div class="bg-gray-800 p-4 rounded-lg">
+            <p class="text-gray-400 text-sm">Câmeras</p>
+            <p class="text-2xl font-bold text-purple-400">{{ total_cameras }}</p>
+        </div>
+    </div>
+
+    <!-- Observations -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-gray-800 p-4 rounded-lg text-center">
+            <p class="text-2xl font-bold text-white">{{ total_obs }}</p>
+            <p class="text-xs text-gray-400">Total Observações</p>
+        </div>
+        <div class="bg-gray-800 p-4 rounded-lg text-center">
+            <p class="text-2xl font-bold text-green-400">{{ received }}</p>
+            <p class="text-xs text-gray-400">Recebidas</p>
+        </div>
+        <div class="bg-gray-800 p-4 rounded-lg text-center">
+            <p class="text-2xl font-bold text-blue-400">{{ processed }}</p>
+            <p class="text-xs text-gray-400">Processadas</p>
+        </div>
+    </div>
+
+    <!-- Central info -->
+    <div class="bg-gray-800 p-4 rounded-lg">
+        <h3 class="font-semibold mb-2">Central</h3>
+        <p class="text-sm text-gray-400">ID: <span class="text-white">{{ central_id }}</span></p>
+        <p class="text-sm text-gray-400">Nome: <span class="text-white">{{ central_name }}</span></p>
+    </div>
+</div>
+{% endblock %}

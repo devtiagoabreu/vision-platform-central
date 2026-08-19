@@ -1,0 +1,33 @@
+{% extends "base_central.html" %}
+{% block title %}Configurações{% endblock %}
+{% block content %}
+<div class="max-w-4xl">
+    <h2 class="text-2xl font-bold mb-6">Configurações</h2>
+
+    <div class="bg-gray-800 p-6 rounded-lg">
+        <h3 class="font-semibold mb-4">Central</h3>
+        <div class="grid grid-cols-2 gap-4 text-sm">
+            <div>
+                <span class="text-gray-400">Central ID:</span>
+                <p class="text-white">{{ central_id }}</p>
+            </div>
+            <div>
+                <span class="text-gray-400">Nome:</span>
+                <p class="text-white">{{ central_name }}</p>
+            </div>
+            <div>
+                <span class="text-gray-400">API Token:</span>
+                <p class="text-white font-mono">{{ central_api_token[:8] }}...</p>
+            </div>
+            <div>
+                <span class="text-gray-400">Collector Interval:</span>
+                <p class="text-white">{{ collector_interval_ms }}ms</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-gray-800 p-4 rounded-lg mt-4">
+        <p class="text-xs text-gray-500">Edite as configurações diretamente no arquivo <code>.env</code> do servidor.</p>
+    </div>
+</div>
+{% endblock %}
