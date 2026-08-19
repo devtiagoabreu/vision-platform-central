@@ -4,10 +4,10 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from src.api.routes import router
 from src.api.dashboard_routes import router as dashboard_router
-from src.auth.router import router as auth_router
+from src.api.routes import router
 from src.auth.password import hash_password
+from src.auth.router import router as auth_router
 from src.collector.local_client import LocalClient
 from src.collector.sync import collect_from_local
 from src.config.settings import settings

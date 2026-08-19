@@ -1,13 +1,20 @@
 from pathlib import Path
 
 import psutil
-from fastapi import APIRouter, Depends, Form, Query, Request
+from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from src.auth.dependencies import get_current_user
 from src.config.settings import settings
-from src.storage.database import LocalRecord, ObservationRecord, get_db
+from src.storage.database import (
+    DEVICE_TYPES,
+    TASK_TYPES,
+    DeviceRecord,
+    LocalRecord,
+    ObservationRecord,
+    get_db,
+)
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
@@ -164,6 +171,22 @@ async def cameras_page(request: Request, db: Session = Depends(get_db)):
     })
 
 
+@router.get("/devices", response_class=HTMLResponse)
+async def devices_page(request: Request, db: Session = Depends(get_db)):
+    user, redirect = _require(request)
+    if redirect:
+        return redirect
+
+    devices = db.query(DeviceRecord).order_by(DeviceRecord.created_at.desc()).all()
+    return _tmpl().TemplateResponse(request, "devices.html", {
+        "user": user,
+        "page": "devices",
+        "devices": devices,
+        "device_types": DEVICE_TYPES,
+        "task_types": TASK_TYPES,
+    })
+
+
 @router.get("/observations", response_class=HTMLResponse)
 async def observations_page(
     request: Request,
@@ -244,7 +267,7 @@ async def collector_poll_web(request: Request, db: Session = Depends(get_db)):
     from src.collector.local_client import LocalClient
     from src.collector.sync import collect_from_local
     client = LocalClient()
-    result = collect_from_local(client=client, db=db)
+    collect_from_local(client=client, db=db)
     return RedirectResponse(url="/dashboard/collector", status_code=302)
 
 

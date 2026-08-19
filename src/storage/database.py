@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import Column, DateTime, Float, Integer, String, create_engine
+from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String, create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from src.config.settings import settings
@@ -11,6 +11,10 @@ SessionLocal = sessionmaker(bind=engine)
 
 class Base(DeclarativeBase):
     pass
+
+
+DEVICE_TYPES = ["camera", "sensor", "other"]
+TASK_TYPES = ["fissure", "ppe", "fabric_quality", "structural"]
 
 
 class ObservationRecord(Base):
@@ -43,6 +47,22 @@ class LocalRecord(Base):
     status = Column(String(32), nullable=False, default="active")
     last_seen_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(UTC))
+
+
+class DeviceRecord(Base):
+    __tablename__ = "device_records"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    device_id = Column(String(64), nullable=False, index=True)
+    local_id = Column(String(64), nullable=False, index=True)
+    name = Column(String(128), nullable=False)
+    device_type = Column(String(32), nullable=False, default="camera")
+    task_type = Column(String(32), nullable=False, default="fissure")
+    is_active = Column(Boolean, nullable=False, default=True)
+    last_seen_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(UTC))
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(UTC),
+                        onupdate=lambda: datetime.now(UTC))
 
 
 class User(Base):

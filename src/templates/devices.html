@@ -1,0 +1,70 @@
+{% extends "base_central.html" %}
+{% block title %}Devices{% endblock %}
+{% block content %}
+<div class="max-w-6xl">
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold">Devices</h2>
+        <p class="text-sm text-gray-400">Devices registrados pelos locais</p>
+    </div>
+
+    <div class="bg-gray-800 rounded-lg overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-700">
+                <tr>
+                    <th class="px-4 py-3 text-left text-gray-300">Device ID</th>
+                    <th class="px-4 py-3 text-left text-gray-300">Nome</th>
+                    <th class="px-4 py-3 text-left text-gray-300">Local</th>
+                    <th class="px-4 py-3 text-left text-gray-300">Tipo</th>
+                    <th class="px-4 py-3 text-left text-gray-300">Tarefa</th>
+                    <th class="px-4 py-3 text-left text-gray-300">Status</th>
+                    <th class="px-4 py-3 text-left text-gray-300">Ultimo Seen</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in devices %}
+                <tr class="border-t border-gray-700 hover:bg-gray-750">
+                    <td class="px-4 py-3 font-mono text-xs text-blue-400">{{ d.device_id }}</td>
+                    <td class="px-4 py-3">{{ d.name }}</td>
+                    <td class="px-4 py-3 text-xs text-gray-400">{{ d.local_id }}</td>
+                    <td class="px-4 py-3">
+                        <span class="px-2 py-1 rounded text-xs
+                            {% if d.device_type == 'camera' %}bg-purple-900 text-purple-300
+                            {% elif d.device_type == 'sensor' %}bg-green-900 text-green-300
+                            {% else %}bg-gray-600 text-gray-300{% endif %}">
+                            {{ d.device_type }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <span class="px-2 py-1 rounded text-xs
+                            {% if d.task_type == 'fissure' %}bg-red-900 text-red-300
+                            {% elif d.task_type == 'ppe' %}bg-yellow-900 text-yellow-300
+                            {% elif d.task_type == 'fabric_quality' %}bg-cyan-900 text-cyan-300
+                            {% elif d.task_type == 'structural' %}bg-orange-900 text-orange-300
+                            {% else %}bg-gray-600 text-gray-300{% endif %}">
+                            {{ d.task_type }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3">
+                        {% if d.is_active %}
+                        <span class="text-green-400 text-xs">● Ativo</span>
+                        {% else %}
+                        <span class="text-red-400 text-xs">● Inativo</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-xs text-gray-400">
+                        {% if d.last_seen_at %}{{ d.last_seen_at }}{% else %}-{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not devices %}
+                <tr>
+                    <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                        Nenhum device registrado. Devices sao sincronizados dos locais.
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
